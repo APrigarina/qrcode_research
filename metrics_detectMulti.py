@@ -5,12 +5,12 @@ import sys
 from os.path import join
 
 import cv2
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import numpy as np
 import json
 
 p = optparse.OptionParser()
-p.add_option('--input', '-i', default="build/qrcode-datasets/datasets",help="Location of directory with input images")
+p.add_option('--input', '-i', default="../build/qrcode-datasets/datasets",help="Location of directory with input images")
 p.add_option('--multiple', '-m')
 
 options, arguments = p.parse_args()
@@ -144,9 +144,7 @@ def compute_metric_3():
 
 
     for cat in input_dir:
-        if cat != 'more_medium':
-            
-            continue
+
         detected = 0
         decoded = 0
         
@@ -227,14 +225,14 @@ def compute_metric_3():
 
     print(detection_data)
     print(decoding_data)
-    json_detection = json.dumps(detection_data) 
+    json_detection = json.dumps(detection_data, indent = 4) 
     with open("detection_percent_metric3.json", "w") as outfile: 
         outfile.write(json_detection) 
-    json_decoding = json.dumps(decoding_data) 
+    json_decoding = json.dumps(decoding_data, indent = 4) 
     with open("decoding_percent_metric3.json", "w") as outfile: 
         outfile.write(json_decoding) 
 
-    show_detect_decode_bar(categories, detection_stat, decoding_stat, "among all QR-codes")
+    # show_detect_decode_bar(categories, detection_stat, decoding_stat, "among all QR-codes")
 
 def compute_metric_2():
 
@@ -323,14 +321,14 @@ def compute_metric_2():
         detection_data[cat] = detected_percent
         decoding_data[cat] = decoded_percent
 
-    json_detection = json.dumps(detection_data) 
+    json_detection = json.dumps(detection_data, indent = 4) 
     with open("detection_percent_metric2.json", "w") as outfile: 
         outfile.write(json_detection) 
-    json_decoding = json.dumps(decoding_data) 
+    json_decoding = json.dumps(decoding_data, indent = 4) 
     with open("decoding_percent_metric2.json", "w") as outfile: 
         outfile.write(json_decoding) 
     # detection_stat1, decoding_stat1 = compute_metric_1()
-    return detection_stat, decoding_stat
+    # return detection_stat, decoding_stat
 
     # show_detect_decode_bar(categories, detection_stat, decoding_stat, "of pictures where at least 1 QR-code is detected/decoded")
 
@@ -425,14 +423,14 @@ def compute_metric_1():
         detection_data[cat] = detected_percent
         decoding_data[cat] = decoded_percent
 
-    json_detection = json.dumps(detection_data) 
+    json_detection = json.dumps(detection_data, indent = 4) 
     with open("detection_percent_metric1.json", "w") as outfile: 
         outfile.write(json_detection) 
-    json_decoding = json.dumps(decoding_data) 
+    json_decoding = json.dumps(decoding_data, indent = 4) 
     with open("decoding_percent_metric1.json", "w") as outfile: 
         outfile.write(json_decoding) 
 
-    return detection_stat, decoding_stat
+    # return detection_stat, decoding_stat
     # show_detect_decode_bar(categories, detection_stat, decoding_stat, "of pictures where all QR-codes are detected/decoded")
 
 def list_to_points(points):
@@ -484,12 +482,13 @@ def compute_metric_4():
 
     for cat in input_dir:
 
+
+
         img_stat = []
         img_to_change = []
 
         categories.append(cat)
-        if cat != 'more_medium':
-            continue
+
         print("category", cat)
 
         path_to_cat  = os.path.join(input_path, cat)
@@ -497,9 +496,6 @@ def compute_metric_4():
         input_data = [f for f in sorted(os.listdir(path_to_cat)) if f.endswith("txt")]
         # print(input_images)
         for idx, input_image in enumerate(input_images):
-
-            if input_image != "IMG_2763.JPG":
-                continue
             print(input_image)
             path_to_image = os.path.join(path_to_cat,input_image)
             path_to_data = os.path.join(path_to_cat,input_data[idx])
@@ -586,8 +582,8 @@ def compute_metric_4():
 
                     inter = detect_mask & true_mask
                     n_white_pix_inter = np.sum(inter == 255)
-                    print("intersection ", n_white_pix_inter)
-                    print("union ", n_white_pix_union)
+                    # print("intersection ", n_white_pix_inter)
+                    # print("union ", n_white_pix_union)
                     print("intersection over union = ", n_white_pix_inter / n_white_pix_union)
 
                     iou = n_white_pix_inter / n_white_pix_union
@@ -596,6 +592,8 @@ def compute_metric_4():
                 
                 bbox_stat /= len(bboxes)
 
+                print("bbox_stat", bbox_stat)
+
                 img_stat.append(bbox_stat)    
 
             
@@ -603,8 +601,8 @@ def compute_metric_4():
         inter_over_union.append(cat_stat)
         iou_data[cat] = cat_stat
         # to_change[cat] = img_to_change
-    json_iou = json.dumps(iou_data) 
-    with open("detection_percent_metrci4.json", "w") as outfile: 
+    json_iou = json.dumps(iou_data, indent = 4) 
+    with open("detection_percent_metric4.json", "w") as outfile: 
         outfile.write(json_iou)
 
     # print(to_change)
@@ -728,19 +726,19 @@ def compute_metric_5():
 
     # show_detection_score(categories, f_score_list)
     
-    json_fscore = json.dumps(fscore_data) 
+    json_fscore = json.dumps(fscore_data, indent = 4) 
     with open("detection_percent_metric5.json", "w") as outfile: 
         outfile.write(json_fscore)
 
-    return f_score_list
+    # return f_score_list
 
 
 
-# compute_metric_5()
-compute_metric_4()
-# compute_metric_3()
-# compute_metric_2()
 # compute_metric_1()
+# compute_metric_2()
+# compute_metric_3()
+compute_metric_4()
+# compute_metric_5()
 
 # detection_stat1, decoding_stat1 = compute_metric_1()
 # detection_stat2, decoding_stat2 = compute_metric_2()

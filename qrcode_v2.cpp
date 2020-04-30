@@ -187,11 +187,11 @@ vector<Point2f> separateVerticalLines(Mat &img, Mat &bin_barcode, const vector<V
     //                   static_cast<float>(result[i][1])));
     // }
     //
-    // for (int j=0; j < point2f_result.size(); j++)
-    // {
-    //   circle(img, point2f_result.at(j), 15, Scalar(63,63,214), -1);
-    // }
-
+    for (int j=0; j < point2f_result.size(); j++)
+    {
+      circle(img, point2f_result.at(j), 3, Scalar(63,63,214), -1);
+    }
+    imwrite( "result_images/intersection_points.png", img );
     // namedWindow( "intersection_points", WINDOW_NORMAL );
     // imshow( "intersection_points", img );
     // waitKey(0);
@@ -569,11 +569,11 @@ bool sortPointsByY(const Point a, Point b)
 {
     return (a.y < b.y);
 }
-vector<Point> get_points(Mat&img, vector<Point>&side, vector<Point>::iterator idx)
+vector<Point> get_points(Mat&img, vector<Point>&side, int start, int end, int step)
 {
     vector<Point> points;
     Point a1, a2, a3;
-    size_t start, end, step;
+
     double max_neighbour_angle = 1.0;
     cout<<"size "<<side.size()<<endl;
     
@@ -586,22 +586,10 @@ vector<Point> get_points(Mat&img, vector<Point>&side, vector<Point>::iterator id
         return points;
     }
     
-    if (idx == side.end())
+    printf("start = %d, end = %d, step = %d\n", start, end, step);
+    for (int j = start; j != end; j+=step)
     {
-        start = side.size()-1;
-        end = 1;
-        step = -1;
-    }
-    else
-    {
-        start = 0;
-        end = side.size() - 2;
-        step = 1;
-    }
-    printf("start = %lu, end = %lu, step = %lu\n", start, end, step);
-    for (size_t j = start; j != end; j+=step)
-    {
-        printf("j = %lu, j+step = %lu, j+step*2 = %lu\n", j, j+step, j+step*2);
+        printf("j = %d, j+step = %d, j+step*2 = %d\n", j, j+step, j+step*2);
 
         a1 = side.at(j);
         a2 = side.at(j+step);
@@ -615,18 +603,30 @@ vector<Point> get_points(Mat&img, vector<Point>&side, vector<Point>::iterator id
         cout<<"max_neighbour_angle "<<max_neighbour_angle<<endl;
         // circle(img, a2, 1, Scalar(0, 255, 255), -1);
         // putText(img, to_string(neighbour_angle), a2, 1, 1, Scalar(0,255,255), 1);
-        cout<<"b1 "<<a1<<" b2 "<<a2<<endl;
-        if(side.size()==5&&(j==4))
-        {
-            circle(img, a2, 1, Scalar(0,255,255), -1);
-            putText(img, "a2", a2, 1, 1, Scalar(0,255,255), 1);
-            // putText(img, "b2", a2, 1, 1, Scalar(0,255,255), 1);
-            // putText(img, "b3", a3, 1, 1, Scalar(0,255,255), 1);
-        }
+        cout<<"a1 "<<a1<<" a2 "<<a2<<endl;
+        // if(side.size()==5&&(j==4))
+        // {
+        //     circle(img, a2, 1, Scalar(0,255,255), -1);
+        //     putText(img, "a2", a2, 1, 1, Scalar(0,255,255), 1);
+        //     // putText(img, "b2", a2, 1, 1, Scalar(0,255,255), 1);
+        //     // putText(img, "b3", a3, 1, 1, Scalar(0,255,255), 1);
+        // }
 
         if (neighbour_angle < max_neighbour_angle)
         {
             max_neighbour_angle = neighbour_angle;
+            // if (j+step == end)
+            // {
+            //     Point temp_a1 = side.at(j+step);
+            //     Point temp_a2 = side.at(j+step*2); 
+            //     if(norm(temp_a1-temp_a2) > 5)
+            //     {
+            //         a1 = temp_a1;
+            //         a2 = temp_a2;
+            //     }
+                 
+            // }
+
         }
         else  
         {
@@ -646,15 +646,21 @@ vector<Point> get_points(Mat&img, vector<Point>&side, vector<Point>::iterator id
                         break;
                     }                            
                 }
-                if(flag) break;
+                if(flag) 
+                {
+                    cout<<"krya\n";
+                    break;
+                }
             }
         }
+
     }
 
 
     points.push_back(a1);
     points.push_back(a2);
-    points.push_back(a3);
+    if (a2 != a3)
+        points.push_back(a3);
     return points;
 }
 
@@ -1498,72 +1504,72 @@ std::cout<<"krya\n";
     //     }
     // }
 
+    
+
     if(find_fourth_point)
     {
         Point a1, a2, b1, b2;
         size_t side_size = sides_points.size();
         Point temp_point = closest_points[idx_max];
-        vector<Point> current_side, next_side;
+        // vector<Point> &current_side, &next_side;
         vector<Point> current_side_points, next_side_points;
-        vector<Point>::iterator idx_a, idx_b;
+        int start_current, end_current, step_current, start_next, end_next, step_next;
+        vector<Point>::iterator it_a, it_b;
 
         
-        current_side = sides_points[(idx_max+3)%4];
-        next_side = sides_points[idx_max];
+        vector<Point> &current_side = sides_points[(idx_max+3)%4];
+        vector<Point> &next_side = sides_points[idx_max];
         
         float dist_to_current_side = abs(distancePt(temp_point, result_angle_list[(idx_max+3)%4], result_angle_list[idx_max]));
         float dist_to_next_side = abs(distancePt(temp_point, result_angle_list[idx_max], result_angle_list[(idx_max+1)%4]));
         cout<<"dist_to_current_side "<<dist_to_current_side<<endl;
         cout<<"dist_to_next_side "<<dist_to_next_side<<endl;
-        if (dist_to_current_side > dist_to_next_side)
+// circle(image, sides_points[3].back(), 5, Scalar(255,255,255), -1);
+        // if (dist_to_current_side > dist_to_next_side)
+        // {
+        //     swap(current_side, next_side);
+        // }
+cout<<"current_side\n";
+        for (int i = 0; i < current_side.size(); i++)
         {
-            swap(current_side, next_side);
+            cout<<current_side[i]<<endl;
         }
-
+// circle(image, sides_points[1].front(), 5, Scalar(255,255,255), -1);
         bool add_point_4 = true;
         
 
-        if(temp_point == current_side.back())
-        {
-            if(temp_point == next_side.back())
-            {   
-                cout<<"back back\n";
-
-                idx_a = current_side.end();
-                idx_b = next_side.end();
-
-            }
-            if(temp_point == next_side.front())
-            {   
-                cout<<"back front\n";
-
-                idx_a = current_side.end();
-                idx_b = next_side.begin();
-
-            }
-        }
         if(temp_point == current_side.front())
         {
-            if(temp_point == next_side.back())
-            {   
-                cout<<"front back\n";
-
-                idx_a = current_side.begin();
-                idx_b = next_side.end();
-
-            }
-            if(temp_point == next_side.front())
-            {   
-                cout<<"front front\n";
-
-                idx_a = current_side.begin();
-                idx_b = next_side.begin();
-
-            }
+            start_current = 0;
+            end_current = current_side.size() - 2;
+            step_current = 1;
+            it_a = current_side.begin();
+        }
+        else if(temp_point == current_side.back())
+        {
+            start_current = current_side.size() - 1;
+            end_current = 1;
+            step_current = -1;
+            it_a = current_side.end()-1;
+        } 
+        if(temp_point == next_side.front())
+        {
+            start_next = 0;
+            end_next = next_side.size() - 2;
+            step_next = 1;
+            it_b = next_side.begin();
+        }
+        else if(temp_point == next_side.back())
+        {
+            start_next = next_side.size() - 1;
+            end_next = 1;
+            step_next = -1;
+            it_b = next_side.end()-1;
         }
 
-        current_side_points = get_points(image, current_side, idx_a);
-        next_side_points = get_points(image, next_side, idx_b);
+
+        current_side_points = get_points(image, current_side, start_current, end_current, step_current);
+        next_side_points = get_points(image, next_side, start_next, end_next, step_next);
 
 
         a1 = current_side_points[0];
@@ -1573,7 +1579,7 @@ std::cout<<"krya\n";
         b2 = next_side_points[1];
 
         cout<<"a1 b1 "<<norm(a1 - b1)<<endl;
-        cout<<"next side "<<next_side_points.size()<<endl;
+        // cout<<"next side "<<next_side_points.size()<<endl;
 
         if(norm(a1 - b1)<10 && next_side_points.size() > 2)
         {
@@ -1582,607 +1588,115 @@ std::cout<<"krya\n";
             b2 = next_side_points[2];
         }
 
-        // circle(image, a1, 1, Scalar(145, 34, 200), -1);
+        circle(image, a1, 1, Scalar(0, 255, 255), -1);
         // putText(image, "a1", a1, 1, 1, Scalar(145, 34, 200), 1);
-        // circle(image, a2, 1, Scalar(145, 34, 200), -1);
+        circle(image, a2, 1, Scalar(0, 0, 255), -1);
         // putText(image, "a2", a2, 1, 1, Scalar(145, 34, 200), 1);
-        // circle(image, b1, 1, Scalar(145, 34, 200), -1);
+        circle(image, b1, 1, Scalar(0, 255, 255), -1);
         // putText(image, "b1", b1, 1, 1, Scalar(145, 34, 200), 1);
-        // circle(image, b2, 1, Scalar(145, 34, 200), -1);
+        circle(image, b2, 1, Scalar(0, 255, 255), -1);
         // putText(image, "b2", b2, 1, 1, Scalar(145, 34, 200), 1);
 
-        // Point point_4 = intersectionLines(a1, a2, b1, b2);
-        // circle(image, point_4, 1, Scalar(145, 34, 200), -1);
+        Point point_4 = intersectionLines(a1, a2, b1, b2);
+        circle(image, point_4, 1, Scalar(145, 34, 200), -1);
+        imwrite("result_images/4_point.png", image);
+// exit(0);
+
+        cout<<"current_side "<<current_side.size()<<endl;
+        for(int i = 0; i < current_side.size(); i++)
+        {
+            cout<<current_side[i]<<endl;
+        }
+        // cout<<"a1 "<<a1<<endl;
+        // cout<<"*it_a "<<*it_a<<endl;
+        // it_a = current_side.erase(it_a);
+        // // it_a += step_current;
+        // // // it_a = temp_it_a;
+        // cout<<"*it_a "<<*it_a<<endl;
+        // cout<<"end "<<*current_side.end()<<endl;
+        // if(it_a == current_side.end()) cout<<"kkkk\n";
+        // // it_a = current_side.erase(it_a);
+        // // cout<<"*it_a "<<*it_a<<endl;
+        cout<<"next_side "<<next_side.size()<<endl;
+        for(int i = 0; i < next_side.size(); i++)
+        {
+            cout<<next_side[i]<<endl;
+        }
+        // cout<<"b1 "<<b1<<endl;
+        // cout<<"*it_b "<<*it_b<<endl;
+        // it_b = next_side.erase(it_b);
+        // cout<<"*it_b "<<*it_b<<endl;
+        // if(*it_b == b1) cout<<"*it_b == b1\n";
+
+
+
+        while (*it_a != a1)
+        {
+            cout<<"removed "<<*it_a<<endl;
+            it_a = current_side.erase(it_a);
+            if (it_a == current_side.end())
+            {
+                it_a += step_current;
+            }
+        }
+        while (*it_b != b1)
+        {
+            cout<<"removed "<<*it_b<<endl;
+            it_b = next_side.erase(it_b);
+            if (it_b == next_side.end())
+            {
+                it_b += step_next;
+            }
+        }
+
+
+                
+        for (int k = 0; k < result_integer_hull.size(); k++)
+        {
+            if(point_4 == result_integer_hull[k]) 
+            {
+                add_point_4 = false;
+                break;
+            }
+        }
+        // cout<<"add_point_4 "<<add_point_4<<endl;
+        for (int k = 0; k < result_angle_list.size(); k++)
+        {
+            Point angle_point = Point(cvRound(result_angle_list[k].x), cvRound(result_angle_list[k].y));
+            if(point_4 == angle_point) 
+            {
+                add_point_4 = false;
+                current_side.emplace(it_a, angle_point);
+                next_side.emplace(it_b, angle_point);
+                closest_points[idx_max] = angle_point;
+                break;
+            }
+
+        }
+        cout<<"add_point_4 "<<add_point_4<<endl;
+        
+        cout<<"closest_point before "<<closest_points[idx_max]<<endl;
+        if(add_point_4)
+        {
+            current_side.emplace(it_a, point_4);
+            next_side.emplace(it_b, point_4);
+            closest_points[idx_max] = point_4;
+        }
+        cout<<"point_4 "<<point_4<<endl;
+        cout<<"closest_point after "<<closest_points[idx_max]<<endl;
+
+        for (int i = 0; i < current_side.size(); i++)
+        {
+            circle(image, current_side[i], 1, Scalar(0,255,0), -1);
+        }
+        for (int i = 0; i < next_side.size(); i++)
+        {
+            circle(image, next_side[i], 1, Scalar(0,255,0), -1);
+        }
         imwrite("result_images/4_point.png", image);
 
-
-                
-        // for (int k = 0; k < result_integer_hull.size(); k++)
-        // {
-        //     if(point_4 == result_integer_hull[k]) 
-        //     {
-        //         add_point_4 = false;
-        //         break;
-        //     }
-
-        // }
-        // cout<<"add_point_4 "<<add_point_4<<endl;
-        // for (int k = 0; k < result_angle_list.size(); k++)
-        // {
-        //     Point angle_point = Point(cvRound(result_angle_list[k].x), cvRound(result_angle_list[k].y));
-        //     if(point_4 == angle_point) 
-        //     {
-        //         add_point_4 = false;
-        //         sides_points[i].push_back(angle_point);
-        //         sides_points[(i+1)%side_size].push_back(angle_point);
-        //         closest_points[(i+1)%side_size] = angle_point;
-        //         break;
-        //     }
-
-        // }
-        // cout<<"add_point_4 "<<add_point_4<<endl;
-        
-        
-        // if(add_point_4)
-        // {
-        //     cout<<"add_point_4\n";
-        //     sides_points[i].push_back(point_4);
-        //     sides_points[(i+1)%side_size].push_back(point_4);
-        //     closest_points[(i+1)%side_size] = point_4;
-        //     break;
-        // }
-
     }
-
-exit(0);
-
-/*
-
-            }
-            if(temp_point == sides_points[(i+1)%side_size].front())
-            {  
-                cout<<"back front \n";
-                add_point_4 = true;      
-                double sum_dist_to_point_current = 0;
-                double sum_dist_to_point_next = 0;
-                LineIterator line_iter_current(bin_barcode, result_angle_list[i], result_angle_list[(i+1)%side_size]);
-                for(int j = 0; j < line_iter_current.count; j++, ++line_iter_current)
-                {
-                    sum_dist_to_point_current += norm(temp_point - line_iter_current.pos());
-                }
-                LineIterator line_iter_next(bin_barcode, result_angle_list[(i+1)%side_size], result_angle_list[(i+2)%side_size]);
-                for(int j = 0; j < line_iter_next.count; j++, ++line_iter_next)
-                {
-                    sum_dist_to_point_next += norm(temp_point - line_iter_next.pos());
-                }
-                sum_dist_to_point_current /= line_iter_current.count;
-                sum_dist_to_point_next /= line_iter_next.count;
-                cout<<sum_dist_to_point_current<<endl;
-                cout<<sum_dist_to_point_next<<endl;
-
-                if(sum_dist_to_point_current < sum_dist_to_point_next)
-                {
-                    cout<<"sum_dist_to_point_current < sum_dist_to_point_next\n";
-
-                    a1 = sides_points[i].at(sides_points[i].size() - 2);
-                    for (int j = sides_points[i].size() - 3; j > 1; j--)
-                    {
-                        a2 = sides_points[i].at(j);
-                        cout<<"a1 a2 "<<norm(a1-a2)<<endl;
-
-                        if(norm(a1-a2) > 10)
-                        {
-                            break;
-                        }
-                    }
-                    int index;
-                    double max_neighbour_angle = 0.0; 
-
-                    for (int j = 1; j < sides_points[(i+1)%side_size].size()-2; j++)
-                    {
-                        b1 = sides_points[(i+1)%side_size].at(j);
-                        b2 = sides_points[(i+1)%side_size].at(j+1);
-                        Point b3 = sides_points[(i+1)%side_size].at(j+2);
-
-                        double neighbour_angle = getCosVectors(b1, b2, b3);
-                        neighbour_angle = floor( neighbour_angle*100 )/100;
-                        max_neighbour_angle = floor( max_neighbour_angle*100 )/100;
-                        cout<<"neighbour_angle "<<neighbour_angle<<endl;
-                        cout<<"max_neighbour_angle "<<max_neighbour_angle<<endl;
-
-                        if (neighbour_angle < max_neighbour_angle)
-                        {
-                            max_neighbour_angle = neighbour_angle;
-                        }
-                        else 
-                        {
-                            b1 = sides_points[(i+1)%side_size].at(j-1);
-                            b2 = sides_points[(i+1)%side_size].at(j);                                
-                            cout<<"b2 b1 "<<norm(b2-b1)<<endl;
-                            if (norm(b2-b1) > 10)
-                            {
-                                break;
-                            }
-                        }
-                    }
-
-                        
-                    while (sides_points[(i+1)%side_size].front() != b1)
-                    {
-                        sides_points[(i+1)%side_size].erase(sides_points[(i+1)%side_size].begin());
-                    }
-
-
-                }
-                else
-                {
-                    cout<<"sum_dist_to_point_current > sum_dist_to_point_next\n";
-
-                    
-                    a1 = sides_points[(i+1)%side_size].at(0);
-                    for (int j = 1; j < sides_points[(i+1)%side_size].size(); j++)
-                    {
-                        a2 = sides_points[(i+1)%side_size].at(j);
-                        cout<<"a1 a2 "<<norm(a1-a2)<<endl;
-
-                        if(norm(a1-a2) > 10)
-                        {
-                            break;
-                        }
-                    }
-                    int index;
-                    double max_neighbour_angle = 0.0; 
-
-                    for (int j = sides_points[i].size() - 2; j > 1; j--)
-                    {
-                        b1 = sides_points[i].at(j);
-                        b2 = sides_points[i].at(j-1);
-                        Point b3 = sides_points[i].at(j-2);
-
-                        double neighbour_angle = getCosVectors(b1, b2, b3);
-                        neighbour_angle = floor( neighbour_angle*100 )/100;
-                        max_neighbour_angle = floor( max_neighbour_angle*100 )/100;
-                        cout<<"neighbour_angle "<<neighbour_angle<<endl;
-                        cout<<"max_neighbour_angle "<<max_neighbour_angle<<endl;
-
-                        if (neighbour_angle < max_neighbour_angle)
-                        {
-                            max_neighbour_angle = neighbour_angle;
-                        }
-                        else 
-                        {
-                            b1 = sides_points[i].at(j+1);
-                            b2 = sides_points[i].at(j);                                
-                            cout<<"b2 b1 "<<norm(b2-b1)<<endl;
-                            if (norm(b2-b1) > 10)
-                            {
-                                break;
-                            }
-                        }
-
-                    }
-                    
-                    
-                    while (sides_points[i].back() != b1)
-                    {
-                        sides_points[i].pop_back(); //  пока расстояние от i до closest point меньше 10
-
-                    }
-
-                    
-                }
-                circle(image, a1, 1, Scalar(145, 34, 200), -1);
-                putText(image, "a1", a1, 1, 1, Scalar(145, 34, 200), 1);
-                circle(image, a2, 1, Scalar(145, 34, 200), -1);
-                putText(image, "a2", a2, 1, 1, Scalar(145, 34, 200), 1);
-                circle(image, b1, 1, Scalar(145, 34, 200), -1);
-                putText(image, "b1", b1, 1, 1, Scalar(145, 34, 200), 1);
-                circle(image, b2, 1, Scalar(145, 34, 200), -1);
-                putText(image, "b2", b2, 1, 1, Scalar(145, 34, 200), 1);
-
-
-                Point point_4 = intersectionLines(a1, a2, b1, b2);
-                cout<<"a1 "<<a1<<endl;
-                cout<<"a2 "<<a2<<endl;
-                cout<<"b1 "<<b1<<endl;
-                cout<<"b2 "<<b2<<endl;
-
-                circle(image, point_4, 1, Scalar(145, 34, 200), -1);
-                imwrite("result_images/4_point.png", image);
-
-                // namedWindow("4 point", WINDOW_NORMAL);
-                // imshow("4 point", image);
-                // waitKey(0);
-
-                vector<Point>::iterator it;
-                
-                for (int k = 0; k < result_integer_hull.size(); k++)
-                {
-                    if(point_4 == result_integer_hull[k]) 
-                    {
-                        add_point_4 = false;
-                        break;
-                    }
-
-                }
-                cout<<"add_point_4 "<<add_point_4<<endl;
-                for (int k = 0; k < result_angle_list.size(); k++)
-                {
-                    Point angle_point = Point(cvRound(result_angle_list[k].x), cvRound(result_angle_list[k].y));
-                    if(point_4 == angle_point) 
-                    {
-                        add_point_4 = false;
-                        it = sides_points[(i+1)%side_size].begin();
-                        sides_points[(i+1)%side_size].emplace(it, angle_point);
-                        closest_points[(i+1)%side_size] = angle_point;
-                        break;
-                    }
-
-                }
-                
-                if(add_point_4)
-                {
-                    sides_points[i].push_back(point_4);
-                    it = sides_points[(i+1)%side_size].begin();
-                    sides_points[(i+1)%side_size].emplace(it, point_4);
-                    closest_points[(i+1)%side_size] = point_4;
-                    break;
-                } 
-            }
-        }
-        if(temp_point == current_side.front())
-        {
-            if(temp_point == sides_points[(i+1)%side_size].front())
-            {  
-                cout<<"front front\n";
-                add_point_4 = true;      
-                double sum_dist_to_point_current = 0;
-                double sum_dist_to_point_next = 0;
-                LineIterator line_iter_current(bin_barcode, result_angle_list[i], result_angle_list[(i+1)%side_size]);
-                for(int j = 0; j < line_iter_current.count; j++, ++line_iter_current)
-                {
-                    sum_dist_to_point_current += norm(temp_point - line_iter_current.pos());
-                }
-                LineIterator line_iter_next(bin_barcode, result_angle_list[(i+1)%side_size], result_angle_list[(i+2)%side_size]);
-                for(int j = 0; j < line_iter_next.count; j++, ++line_iter_next)
-                {
-                    sum_dist_to_point_next += norm(temp_point - line_iter_next.pos());
-                }
-                sum_dist_to_point_current /= line_iter_current.count;
-                sum_dist_to_point_next /= line_iter_next.count;
-                cout<<sum_dist_to_point_current<<endl;
-                cout<<sum_dist_to_point_next<<endl;
-
-                if(sum_dist_to_point_current < sum_dist_to_point_next)
-                {
-                    cout<<"sum_dist_to_point_current < sum_dist_to_point_next\n";
-
-                    a1 = sides_points[i].at(0);
-                    for (int j = 1; j < sides_points[i].size(); j++)
-                    {
-                        a2 = sides_points[i].at(j);
-                        if(norm(a1-a1) > 10) 
-                        {
-                            break;
-                        }
-                    }
-                    int index;                        
-                    double max_neighbour_angle = 0.0; 
-
-                    for (int j = 1; j < sides_points[(i+1)%side_size].size()-2; j++)
-                    {
-                        b1 = sides_points[(i+1)%side_size].at(j);
-                        b2 = sides_points[(i+1)%side_size].at(j+1);
-                        Point b3 = sides_points[(i+1)%side_size].at(j+2);
-
-                        double neighbour_angle = getCosVectors(b1, b2, b3);
-                        neighbour_angle = floor( neighbour_angle*100 )/100;
-                        max_neighbour_angle = floor( max_neighbour_angle*100 )/100;
-                        cout<<"neighbour_angle "<<neighbour_angle<<endl;
-                        cout<<"max_neighbour_angle "<<max_neighbour_angle<<endl;
-
-                        if (neighbour_angle < max_neighbour_angle)
-                        {
-                            max_neighbour_angle = neighbour_angle;
-                        }
-                        else 
-                        {
-                            b1 = sides_points[(i+1)%side_size].at(j-1);
-                            b2 = sides_points[(i+1)%side_size].at(j);                                
-                            cout<<"b2 b1 "<<norm(b2-b1)<<endl;
-                            if (norm(b2-b1) > 10)
-                            {
-                                break;
-                            }
-                        }
-                    }
-
-
-                    while (sides_points[(i+1)%side_size].front() != b1)
-                    {
-                        sides_points[(i+1)%side_size].erase(sides_points[(i+1)%side_size].begin());
-                    }
-
-                }
-                else
-                {
-                    cout<<"sum_dist_to_point_current > sum_dist_to_point_next\n";
-                    
-                    a1 = sides_points[(i+1)%side_size].at(0);
-                    for (int j = 1; j < sides_points[(i+1)%side_size].size(); j++)
-                    {
-                        a2 = sides_points[(i+1)%side_size].at(j);
-                        if(norm(a1-a1) > 10) 
-                        {
-                            break;
-                        }
-                    }
-                    int index;                        
-                    double max_neighbour_angle = 0.0; 
-
-                    for (int j = 1; j < sides_points[i].size()-2; j++)
-                    {
-                        b1 = sides_points[i].at(j);
-                        b2 = sides_points[i].at(j+1);
-                        Point b3 = sides_points[i].at(j+2);
-
-                        double neighbour_angle = getCosVectors(b1, b2, b3);
-                        neighbour_angle = floor( neighbour_angle*100 )/100;
-                        max_neighbour_angle = floor( max_neighbour_angle*100 )/100;
-                        cout<<"neighbour_angle "<<neighbour_angle<<endl;
-                        cout<<"max_neighbour_angle "<<max_neighbour_angle<<endl;
-
-                        if (neighbour_angle < max_neighbour_angle)
-                        {
-                            max_neighbour_angle = neighbour_angle;
-                        }
-                        else 
-                        {
-                            b1 = sides_points[i].at(j-1);
-                            b2 = sides_points[i].at(j);                                
-                            cout<<"b2 b1 "<<norm(b2-b1)<<endl;
-                            if (norm(b2-b1) > 10)
-                            {
-                                break;
-                            }
-                        }
-                    }
-
-                    while (sides_points[i].front() != b1)
-                    {
-                        sides_points[i].erase(sides_points[i].begin());
-                    }
-                    
-                }
-                
-                circle(image, a1, 1, Scalar(145, 34, 200), -1);
-                circle(image, a2, 1, Scalar(145, 34, 200), -1);
-                circle(image, b1, 1, Scalar(145, 34, 200), -1);
-                circle(image, b2, 1, Scalar(145, 34, 200), -1);
-
-                Point point_4 = intersectionLines(a1, a2, b1, b2);
-                circle(image, point_4, 1, Scalar(145, 34, 200), -1);
-                imwrite("result_images/4_point.png", image);
-
-                // namedWindow("4 point", WINDOW_NORMAL);
-                // imshow("4 point", image);
-                // waitKey(0);
-
-                vector<Point>::iterator it1, it2;
-                
-                for (int k = 0; k < result_integer_hull.size(); k++)
-                {
-                    if(point_4 == result_integer_hull[k]) 
-                    {
-                        add_point_4 = false;
-                        break;
-                    }
-
-                }
-                cout<<"add_point_4 "<<add_point_4<<endl;
-                for (int k = 0; k < result_angle_list.size(); k++)
-                {
-                    Point angle_point = Point(cvRound(result_angle_list[k].x), cvRound(result_angle_list[k].y));
-                    if(point_4 == angle_point) 
-                    {
-                        add_point_4 = false;
-                        it1 = current_side.begin();
-                        current_side.emplace(it1, angle_point);
-                        it2 = sides_points[(i+1)%side_size].begin();
-                        sides_points[(i+1)%side_size].emplace(it2, angle_point);
-                        closest_points[(i+1)%side_size] = angle_point;
-                        break;
-                    }
-
-                }
-                
-                if(add_point_4)
-                {
-                    it1 = current_side.begin();
-                    current_side.emplace(it1, point_4);
-                    it2 = sides_points[(i+1)%side_size].begin();
-                    sides_points[(i+1)%side_size].emplace(it2, point_4);
-                    closest_points[(i+1)%side_size] = point_4;
-                    break;
-                } 
-            }
-            if(temp_point == sides_points[(i+1)%side_size].back())
-            {  
-                cout<<"front back\n";
-                add_point_4 = true;      
-                double sum_dist_to_point_current = 0;
-                double sum_dist_to_point_next = 0;
-                LineIterator line_iter_current(bin_barcode, result_angle_list[i], result_angle_list[(i+1)%side_size]);
-                for(int j = 0; j < line_iter_current.count; j++, ++line_iter_current)
-                {
-                    sum_dist_to_point_current += norm(temp_point - line_iter_current.pos());
-                }
-                LineIterator line_iter_next(bin_barcode, result_angle_list[(i+1)%side_size], result_angle_list[(i+2)%side_size]);
-                for(int j = 0; j < line_iter_next.count; j++, ++line_iter_next)
-                {
-                    sum_dist_to_point_next += norm(temp_point - line_iter_next.pos());
-                }
-                sum_dist_to_point_current /= line_iter_current.count;
-                sum_dist_to_point_next /= line_iter_next.count;
-                cout<<sum_dist_to_point_current<<endl;
-                cout<<sum_dist_to_point_next<<endl;
-
-                if(sum_dist_to_point_current < sum_dist_to_point_next)
-                {
-                    cout<<"sum_dist_to_point_current < sum_dist_to_point_next\n";
-
-                    a1 = sides_points[i].at(0);
-                    for (int j = 1; j < sides_points[i].size(); j++)
-                    {
-                        a2 = sides_points[i].at(j);
-                        if(norm(a1-a2) > 10) 
-                        {
-                            break;
-                        }
-                    }
-                    int index;
-                    double max_neighbour_angle = 0.0; 
-
-                    for (int j = sides_points[(i+1)%side_size].size() - 2; j > 1; j--)
-                    {
-                        b1 = sides_points[(i+1)%side_size].at(j);
-                        b2 = sides_points[(i+1)%side_size].at(j-1);
-                        Point b3 = sides_points[(i+1)%side_size].at(j-2);
-
-                        double neighbour_angle = getCosVectors(b1, b2, b3);
-                        neighbour_angle = floor( neighbour_angle*100 )/100;
-                        max_neighbour_angle = floor( max_neighbour_angle*100 )/100;
-                        cout<<"neighbour_angle "<<neighbour_angle<<endl;
-                        cout<<"max_neighbour_angle "<<max_neighbour_angle<<endl;
-
-                        if (neighbour_angle < max_neighbour_angle)
-                        {
-                            max_neighbour_angle = neighbour_angle;
-                        }
-                        else 
-                        {
-                            b1 = sides_points[(i+1)%side_size].at(j+1);
-                            b2 = sides_points[(i+1)%side_size].at(j);                                
-                            b3 = sides_points[(i+1)%side_size].at(j-1);
-                            cout<<"b2 b1 "<<norm(b2-b1)<<endl;
-                            if ((norm(b2-b1) > 10))
-                            {
-                                break;
-                            }
-                        }
-                    }
-                    
-                    while (sides_points[(i+1)%side_size].back() != b1)
-                    {
-                        sides_points[(i+1)%side_size].pop_back();
-
-                    }
-                    
-
-                }
-                else
-                {
-                    cout<<"sum_dist_to_point_current > sum_dist_to_point_next\n";
-                    
-                    a1 = sides_points[(i+1)%side_size].at(sides_points[(i+1)%side_size].size() - 1);
-                    for (int j = sides_points[(i+1)%side_size].size() - 2; j > 1; j--)
-                    {
-                        a2 = sides_points[(i+1)%side_size].at(j);
-                        if(norm(a1-a2) > 10) 
-                        {
-                            break;
-                        }
-                    }
-                    int index;
-                    double max_neighbour_angle = 0.0; 
-
-                    for (int j = 1; j < sides_points[i].size() - 2; j--)
-                    {
-                        b1 = sides_points[i].at(j);
-                        b2 = sides_points[i].at(j+1);
-                        Point b3 = sides_points[i].at(j+2);
-
-                        double neighbour_angle = getCosVectors(b1, b2, b3);
-                        neighbour_angle = floor( neighbour_angle*100 )/100;
-                        max_neighbour_angle = floor( max_neighbour_angle*100 )/100;
-                        cout<<"neighbour_angle "<<neighbour_angle<<endl;
-                        cout<<"max_neighbour_angle "<<max_neighbour_angle<<endl;
-
-                        if (neighbour_angle < max_neighbour_angle)
-                        {
-                            max_neighbour_angle = neighbour_angle;
-                        }
-                        else 
-                        {
-                            b1 = sides_points[i].at(j-1);
-                            b2 = sides_points[i].at(j);                                
-                            cout<<"b2 b1 "<<norm(b2-b1)<<endl;
-                            if (norm(b2-b1) > 10)
-                            {
-                                break;
-                            }
-                        }
-                    }
-
-                    while (sides_points[i].back() != b1)
-                    {
-                        sides_points[i].erase(sides_points[i].begin());
-
-                    }
-                    
-                }
-
-                circle(image, a1, 1, Scalar(145, 34, 200), -1);
-                circle(image, a2, 1, Scalar(145, 34, 200), -1);
-                circle(image, b1, 1, Scalar(145, 34, 200), -1);
-                circle(image, b2, 1, Scalar(145, 34, 200), -1);
-
-                Point point_4 = intersectionLines(a1, a2, b1, b2);
-                circle(image, point_4, 1, Scalar(145, 34, 200), -1);
-                imwrite("result_images/4_point.png", image);
-
-                vector<Point>::iterator it;
-                
-                for (int k = 0; k < result_integer_hull.size(); k++)
-                {
-                    if(point_4 == result_integer_hull[k]) 
-                    {
-                        add_point_4 = false;
-                        break;
-                    }
-
-                }
-                cout<<"add_point_4 "<<add_point_4<<endl;
-                for (int k = 0; k < result_angle_list.size(); k++)
-                {
-                    Point angle_point = Point(cvRound(result_angle_list[k].x), cvRound(result_angle_list[k].y));
-                    if(point_4 == angle_point) 
-                    {
-                        add_point_4 = false;
-                        current_side.push_back(angle_point);
-                        it = sides_points[(i+1)%side_size].begin();
-                        sides_points[(i+1)%side_size].emplace(it, angle_point);
-                        closest_points[(i+1)%side_size] = angle_point;
-                        break;
-                    }
-
-                }
-                
-                if(add_point_4)
-                {
-                    current_side.push_back(point_4);
-                    it = sides_points[(i+1)%side_size].begin();
-                    sides_points[(i+1)%side_size].emplace(it, point_4);
-                    closest_points[(i+1)%side_size] = point_4;
-                    break;
-                }
-                    
-            }
-
-            
-        }
-
-    }
+    // exit(0);
     // namedWindow("sides_points_mask", WINDOW_NORMAL);
     Mat sides_points_mask = Mat::zeros(bin_barcode.size(), CV_8UC1);
 
@@ -2329,6 +1843,15 @@ exit(0);
     double max_dist_to_arc_side = 0.0;
     for (int i = 0; i < closest_points.size(); i++)
     {
+        putText(add_points_image, to_string(i), closest_points[i], 1, 1, Scalar(0,255,255), 1);
+    }
+    for (int k = 0 ;k < sides_points.size(); k++)
+    {
+        putText(add_points_image, to_string(k), sides_points[k].front(), 2, 2, Scalar(0,0,255), 1);
+        
+    }
+    for (int i = 0; i < closest_points.size(); i++)
+    {
         double dist_to_arc = 0.0;
         Point arc_begin = closest_points[i];
         Point arc_end = closest_points[(i+1)%4];
@@ -2338,14 +1861,17 @@ exit(0);
             
             // Point perpendicular = pointProjection(arc_begin, arc_end, arc_point);
             // line(add_points_image, arc_point, perpendicular, Scalar(100, 250, 0), 1);
+            circle(add_points_image, arc_point, 1, Scalar(255), -1);
 
             double dist = abs(distancePt(arc_point, arc_begin, arc_end));
             dist_to_arc += dist;
 
         }
         cout<<"dist_to_arc "<<dist_to_arc<<endl;
+        cout<<sides_points[i].size()-2<<endl;
 
         dist_to_arc /= (sides_points[i].size()-2);
+        cout<<"mean dist_to_arc "<<dist_to_arc<<endl;
 
         if (dist_to_arc > max_dist_to_arc_side)
         {
@@ -2399,7 +1925,7 @@ exit(0);
     {
         cout<<cur_add_indexes[i]<<endl;
     }
-
+// exit(0);
 
     vector<vector<Point>> sides_add_points;
     vector<pair<int,vector<Point>>> marker_points;
@@ -2620,9 +2146,15 @@ exit(0);
     {
         mean_step /= marker_points.size();
     }
-
-
-
+    cout<<"temp_sides_add_points size "<<temp_sides_add_points.size()<<endl;
+    // exit(0);
+// for (int i = 0; i < temp_sides_add_points[1].size(); i++)
+// {
+//     circle(spline_image, temp_sides_add_points[1][i], 3, Scalar(0,255,255), -1);
+// }
+// imwrite("result_images/temp_sides_add_points.png", spline_image);
+    cout<<"temp_sides_add_points size "<<temp_sides_add_points.size()<<endl;
+// exit(0);
     // for (int i = 0; i < sides_points.size(); i++)
     // {
     //     for (int j = 0; j < sides_points[i].size(); j++)
@@ -2735,7 +2267,8 @@ if (temp_sides_add_points.size() > 0)
     imwrite("result_images/order_add_points.png", spline_image);
 
     // exit(0);
-
+    cout<<"add points size "<<temp_sides_add_points.size()<<endl;
+    // exit(0);
     if (temp_sides_add_points.size() < 2)
     {
         for (int i = 0; i < cur_indexes.size(); i++)
@@ -2748,6 +2281,7 @@ if (temp_sides_add_points.size() > 0)
             }
         }
     }
+    // cout<<"add points size "<<temp_sides_add_points.size()<<endl;
     for (std::map<int,vector<Point>>::iterator it=temp_sides_add_points.begin(); it!=temp_sides_add_points.end(); ++it)
     // for (int i = 0; i < temp_sides_add_points.size(); i++)
     {
@@ -3170,9 +2704,9 @@ if(points_to_cut[0].size() == 0 || points_to_cut[1].size() == 0)
     cout<<"max_dist_to_arc "<<max_dist_to_arc<<endl;
     cout<<"max_dist_to_arc "<<ceil(max_dist_to_arc)<<endl;
     imwrite("result_images/arc_lines.png", arc_image);
-
+// 
     int number_of_points = ceil(max_dist_to_arc);
-    // int number_of_points = 15;
+    // int number_of_points = 7;
     cout<<"number_of_points "<<number_of_points<<endl;
 // exit(0);
     vector<vector<Point>> test_vector(2);
@@ -3467,6 +3001,7 @@ cout<<"vertical_order "<<vertical_order<<endl;
     cout<<"argv "<<argv[1]<<endl;
     String name = "result_images/finish_result_" + String(argv[1]);
     imwrite(name, intermediate);
+    cout<<"write to "<<name<<endl;
 
 
     // namedWindow("lines to cut", WINDOW_NORMAL);
@@ -3474,7 +3009,7 @@ cout<<"vertical_order "<<vertical_order<<endl;
     // waitKey(0);
 
 
-*/
+
   return result_angle_list;
 }
 
